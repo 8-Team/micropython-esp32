@@ -1,0 +1,81 @@
+FROM ubuntu:16.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y \
+        bison \
+        build-essential \
+        bzip2 \
+        automake \
+        bison \
+        flex \
+        flex \
+        gawk \
+        gettext \
+        git \
+        gperf \
+        gperf \
+        grep \
+        help2man \
+        libncurses-dev \
+        libtool \
+        libtool-bin \
+        make \
+        python \
+        python \
+        python-dev \
+        python-serial \
+        texinfo \
+        wget
+
+
+# cannot build as root
+RUN useradd -s /bin/bash --create-home micropython
+USER micropython
+WORKDIR /home/micropython
+
+
+# build crosstool-NG
+RUN git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git \
+    && cd crosstool-NG \
+    && ./bootstrap && ./configure --enable-local && make install
+
+
+# build toolchain, cannot build as root
+RUN cd crosstool-NG \
+    && ./ct-ng xtensa-esp32-elf \
+    && ./ct-ng build \
+    && chmod -R u+w builds/xtensa-esp32-elf
+
+
+# sdk
+# known version of the esp-sdk that works with micropython-esp32
+# search for ESPIDF_SUPHASH in Makefile
+ENV ESPIDF_SUPHASH=9a26296a0e88a4c3ae27e9c848be970946fff87e
+ENV ESPIDF=/home/micropython/esp-idf
+
+RUN git clone --recursive https://github.com/espressif/esp-idf \
+    && cd esp-idf \
+    && git checkout $ESPIDF_SUPHASH \
+    && git submodule update --recursive
+
+
+# build micropython now, meant to be used as a volume
+ADD --chown=micropython . micropython
+
+
+# build mpry-cross
+RUN cd micropython && make -C mpy-cross
+
+
+# build micropython, yay!
+ENV CROSS_COMPILE=/home/micropython/crosstool-NG/builds/xtensa-esp32-elf/bin/xtensa-esp32-elf-
+
+RUN cd micropython && git submodule init lib/berkeley-db-1.xx && git submodule update
+RUN cd micropython/ports/esp32 && make
+
+
+# compile by default
+CMD cd micropython/ports/esp32 && rm -rf build/* && make

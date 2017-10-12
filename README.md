@@ -32,6 +32,15 @@ If there is enough interest in the port to the ESP32 then this code can
 eventually be merged into the upstream repository.  So please do let your
 interest be known!
 
+How to build inside docker:
+
+```
+$ docker build -t micropython-esp32 -f Dockerfile.esp32 .
+
+# artifacts will be in $pwd/build
+$ docker run --rm -v $pwd/build:/home/micropython/micropython/ports/esp32/build micropython-esp32
+```
+
 About MicroPython
 -----------------
 
