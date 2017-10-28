@@ -21,12 +21,16 @@ FLASH_FREQ ?= 40m
 FLASH_SIZE ?= 4MB
 CROSS_COMPILE ?= xtensa-esp32-elf-
 
-# paths to ESP IDF and its components
+ESPTOOL ?= esptool.py
+
 ifeq ($(ESPIDF),)
-$(error Please configure the ESPIDF variable)
-endif
+$(info ** WARNING **)
+$(info The ESPIDF variable is not set)
+$(info Compilation will not work, but you're still able to build inside docker and flash/erase the device)
+else
+# paths to ESP IDF and its components
 ESPCOMP = $(ESPIDF)/components
-ESPTOOL ?= $(ESPCOMP)/esptool_py/esptool/esptool.py
+ESPTOOL = $(ESPCOMP)/esptool_py/esptool/esptool.py
 
 # verify the ESP IDF version
 ESPIDF_SUPHASH := 2c95a77cf93781f296883d5dbafcdc18e4389656
@@ -38,6 +42,7 @@ $(info The build may complete and the firmware may work but it is not guaranteed
 $(info ESP IDF path:       $(ESPIDF))
 $(info Current git hash:   $(ESPIDF_CURHASH))
 $(info Supported git hash: $(ESPIDF_SUPHASH))
+endif
 endif
 
 # pretty format of ESP IDF version, used internally by the IDF
@@ -589,10 +594,7 @@ OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_WPA_SUPPLICANT_O))
 
 all: $(BUILD)/firmware.bin
 
-.PHONY: idf-version deploy erase
-
-idf-version:
-	$(ECHO) "ESP IDF supported hash: $(ESPIDF_SUPHASH)"
+.PHONY: deploy docker-build erase flash idf-version
 
 $(BUILD)/firmware.bin: $(BUILD)/bootloader.bin $(BUILD)/partitions.bin $(BUILD)/application.bin
 	$(ECHO) "Create $@"
@@ -600,11 +602,20 @@ $(BUILD)/firmware.bin: $(BUILD)/bootloader.bin $(BUILD)/partitions.bin $(BUILD)/
 
 deploy: $(BUILD)/firmware.bin
 	$(ECHO) "Writing $^ to the board"
-	$(Q)$(ESPTOOL) --chip esp32 --port $(PORT) --baud $(BAUD) write_flash -z --flash_mode $(FLASH_MODE) --flash_freq $(FLASH_FREQ) 0x1000 $^
+	flash
+
+docker-build:
+	docker run --rm -v $(shell pwd):/home/micropython/micropython/ports/esp32 micropython-esp32
 
 erase:
 	$(ECHO) "Erasing flash"
 	$(Q)$(ESPTOOL) --chip esp32 --port $(PORT) --baud $(BAUD) erase_flash
+
+flash:
+	$(Q)$(ESPTOOL) --chip esp32 --port $(PORT) --baud $(BAUD) write_flash -z --flash_mode $(FLASH_MODE) --flash_freq $(FLASH_FREQ) 0x1000 $(BUILD)/firmware.bin
+
+idf-version:
+	$(ECHO) "ESP IDF supported hash: $(ESPIDF_SUPHASH)"
 
 ################################################################################
 # Declarations to build the application
