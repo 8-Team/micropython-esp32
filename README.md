@@ -1,3 +1,15 @@
+Otto
+======================
+How to build inside docker:
+
+```
+$ docker build -t micropython-esp32 -f Dockerfile.esp32 .
+$ cd ports/esp32
+$ pip install -r requirements.txt
+$ make otto-dev
+$ env PORT=/dev/ttyUSB0 make flash
+```
+
 [![Build Status](https://travis-ci.org/micropython/micropython.png?branch=master)](https://travis-ci.org/micropython/micropython) [![Coverage Status](https://coveralls.io/repos/micropython/micropython/badge.png?branch=master)](https://coveralls.io/r/micropython/micropython?branch=master)
 
 The MicroPython project
@@ -31,15 +43,6 @@ this repository (apart from `master`) may be rebased or deleted at any time.
 If there is enough interest in the port to the ESP32 then this code can
 eventually be merged into the upstream repository.  So please do let your
 interest be known!
-
-How to build inside docker:
-
-```
-$ docker build -t micropython-esp32 -f Dockerfile.esp32 .
-
-# artifacts will be in $pwd/build
-$ docker run --rm -v $pwd/build:/home/micropython/micropython/ports/esp32/build micropython-esp32
-```
 
 About MicroPython
 -----------------
