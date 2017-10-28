@@ -1,3 +1,12 @@
+Build with docker
+=============================
+be sure to have the `micropython-esp32` image locally.
+```
+$ make docker-build
+$ make flash
+```
+
+
 MicroPython port to the ESP32
 =============================
 
