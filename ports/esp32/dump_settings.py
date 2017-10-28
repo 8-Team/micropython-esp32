@@ -25,6 +25,10 @@ WIFI_SETTINGS = (
     ('WIFI_TIMEOUT', _int_setting),
 )
 
+BACOTTO_SETTINGS = (
+    ('BACOTTO_URL', _str_setting),
+)
+
 
 # -----------------------------------------------------------
 # Main
@@ -33,7 +37,9 @@ WIFI_SETTINGS = (
 def main():
     # in the future env could be a config file
     env = os.environ
+
     _dump_settings_group(env, 'Wifi', WIFI_SETTINGS)
+    _dump_settings_group(env, 'Bacotto', BACOTTO_SETTINGS)
 
 
 def _dump_settings_group(env, comment, settings):
