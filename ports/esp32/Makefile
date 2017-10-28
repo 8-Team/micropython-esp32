@@ -598,7 +598,7 @@ OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_WPA_SUPPLICANT_O))
 
 all: $(BUILD)/firmware.bin
 
-.PHONY: deploy docker-build erase flash idf-version
+.PHONY: deploy docker-build erase flash idf-version otto otto-dump-settings
 
 $(BUILD)/firmware.bin: $(BUILD)/bootloader.bin $(BUILD)/partitions.bin $(BUILD)/application.bin
 	$(ECHO) "Create $@"
@@ -620,6 +620,11 @@ flash:
 
 idf-version:
 	$(ECHO) "ESP IDF supported hash: $(ESPIDF_SUPHASH)"
+
+otto-dev: otto-dump-settings docker-build
+
+otto-dump-settings:
+	$(Q)$(PYTHON) dump_settings.py > modules/settings.py
 
 ################################################################################
 # Declarations to build the application
