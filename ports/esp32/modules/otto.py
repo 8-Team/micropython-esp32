@@ -1,5 +1,6 @@
 import settings
 import network
+import urequests
 import utime
 
 
@@ -31,12 +32,20 @@ def wlan_disconnect():
     return sta_if.isconnected()
 
 
+def call_bacotto():
+    resp = urequests.get(settings.BACOTTO_URL)
+    print('Wow! Bacotto replied:', resp.text)
+
+
 def run():
     while True:
         is_connected = wlan_connect()
 
         if is_connected:
-            print('connected!')
-            utime.sleep_ms(1000)
+            try:
+                call_bacotto()
+            except Exception as e:
+                print(e)
+                utime.sleep_ms(1000)
 
             wlan_disconnect()
