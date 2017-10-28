@@ -53,7 +53,7 @@ RUN cd crosstool-NG \
 # sdk
 # known version of the esp-sdk that works with micropython-esp32
 # search for ESPIDF_SUPHASH in Makefile
-ENV ESPIDF_SUPHASH=9a26296a0e88a4c3ae27e9c848be970946fff87e
+ENV ESPIDF_SUPHASH=2c95a77cf93781f296883d5dbafcdc18e4389656
 ENV ESPIDF=/home/micropython/esp-idf
 
 RUN git clone --recursive https://github.com/espressif/esp-idf \
