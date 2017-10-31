@@ -78,4 +78,4 @@ RUN cd micropython/ports/esp32 && make
 
 
 # compile by default
-CMD cd micropython/ports/esp32 && rm -rf build/* && make
+CMD cd micropython/ports/esp32 && make
