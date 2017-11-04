@@ -38,11 +38,19 @@ def call_bacotto():
 
 
 def run():
+    sntp_setup = False
+
     while True:
         is_connected = wlan_connect()
 
         if is_connected:
             try:
+                if not sntp_setup:
+                    print('sntp setup...')
+                    utime.settime_sntp()
+                    sntp_setup = True
+
+                print('current timestamp:', utime.time())
                 call_bacotto()
             except Exception as e:
                 print(e)
