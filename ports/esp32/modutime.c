@@ -30,9 +30,13 @@
 #include <string.h>
 #include <sys/time.h>
 
+#include "py/mphal.h"
 #include "py/runtime.h"
+
 #include "lib/timeutils/timeutils.h"
 #include "extmod/utime_mphal.h"
+
+#include "apps/sntp/sntp.h"
 
 STATIC mp_obj_t time_localtime(size_t n_args, const mp_obj_t *args) {
     timeutils_struct_time_t tm;
@@ -100,12 +104,37 @@ STATIC mp_obj_t time_settime(size_t n_args, const mp_obj_t *args) {
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(time_settime_obj, 1, 2, time_settime);
 
 
+// not a standard python function
+STATIC mp_obj_t time_settime_sntp() {
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_init();
+
+    // wait for time to be set
+    time_t now = 0;
+    struct tm timeinfo = { 0 };
+    int retry = 0;
+    const int retry_count = 10;
+    while(timeinfo.tm_year < (2017 - 1900) && ++retry < retry_count) {
+        mp_hal_delay_ms(2000);
+        time(&now);
+        localtime_r(&now, &timeinfo);
+    }
+
+    sntp_stop();
+
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_0(time_settime_sntp_obj, time_settime_sntp);
+
+
 STATIC const mp_rom_map_elem_t time_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_utime) },
 
     { MP_ROM_QSTR(MP_QSTR_localtime), MP_ROM_PTR(&time_localtime_obj) },
     { MP_ROM_QSTR(MP_QSTR_mktime), MP_ROM_PTR(&time_mktime_obj) },
     { MP_ROM_QSTR(MP_QSTR_settime), MP_ROM_PTR(&time_settime_obj) },
+    { MP_ROM_QSTR(MP_QSTR_settime_sntp), MP_ROM_PTR(&time_settime_sntp_obj) },
     { MP_ROM_QSTR(MP_QSTR_time), MP_ROM_PTR(&time_time_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&mp_utime_sleep_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep_ms), MP_ROM_PTR(&mp_utime_sleep_ms_obj) },

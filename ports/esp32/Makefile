@@ -75,6 +75,7 @@ INC_ESPCOMP += -I$(ESPCOMP)/nvs_flash/include
 INC_ESPCOMP += -I$(ESPCOMP)/freertos/include
 INC_ESPCOMP += -I$(ESPCOMP)/tcpip_adapter/include
 INC_ESPCOMP += -I$(ESPCOMP)/lwip/include/lwip
+INC_ESPCOMP += -I$(ESPCOMP)/lwip/include/lwip/apps/sntp
 INC_ESPCOMP += -I$(ESPCOMP)/lwip/include/lwip/port
 INC_ESPCOMP += -I$(ESPCOMP)/lwip/include/lwip/posix
 INC_ESPCOMP += -I$(ESPCOMP)/mbedtls/include
