@@ -11,6 +11,9 @@ import os
 def _str_setting(val):
     return "'''{}'''".format(val)
 
+def _bytes_setting(val):
+    return "b'''{}'''".format(val)
+
 def _int_setting(val):
     return str(int(val))
 
@@ -26,6 +29,8 @@ WIFI_SETTINGS = (
 )
 
 BACOTTO_SETTINGS = (
+    ('BACOTTO_OTP_SECRET', _bytes_setting),
+    ('BACOTTO_SERIAL', _str_setting),
     ('BACOTTO_URL', _str_setting),
 )
 

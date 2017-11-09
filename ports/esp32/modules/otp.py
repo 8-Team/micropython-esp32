@@ -8,7 +8,7 @@ class OTP(object):
     """
     Base class for OTP handlers.
     """
-    def __init__(self, s, digits=6, digest=hashlib.sha256):
+    def __init__(self, s, digits=6, digest=hashlib.sha1):
         """
         :param s: secret in base32 format
         :type s: str
