@@ -1,5 +1,6 @@
 import settings
 import network
+import otp
 import urequests
 import utime
 
@@ -32,12 +33,18 @@ def wlan_disconnect():
     return sta_if.isconnected()
 
 
-def call_bacotto():
-    resp = urequests.get(settings.BACOTTO_URL)
-    print('Wow! Bacotto replied:', resp.text)
+def call_bacotto(otp_gen):
+    totp_tok = otp_gen.totp(utime.time(), interval=30)
+
+    resp = urequests.get(settings.BACOTTO_URL + '/ping', params={
+        'otp': totp_tok,
+        'serial': settings.BACOTTO_SERIAL,
+    })
+    print('Wow! Bacotto replied:', resp.status_code, resp.text)
 
 
 def run():
+    otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
     sntp_setup = False
 
     while True:
@@ -51,7 +58,7 @@ def run():
                     sntp_setup = True
 
                 print('current timestamp:', utime.time())
-                call_bacotto()
+                call_bacotto(otp_gen)
             except Exception as e:
                 print(e)
                 utime.sleep_ms(1000)
