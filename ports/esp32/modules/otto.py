@@ -3,6 +3,8 @@ import network
 import otp
 import urequests
 import utime
+import encoder
+import machine
 
 
 def wlan_connect():
@@ -44,6 +46,7 @@ def call_bacotto(otp_gen):
 
 
 def run():
+    enc = encoder.RotaryEncoder(machine.Pin(26), machine.Pin(35))
     otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
     sntp_setup = False
 
