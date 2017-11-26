@@ -22,6 +22,10 @@ def _int_setting(val):
 # Settings
 # -----------------------------------------------------------
 
+DEBUG_SETTINGS = (
+    ('DEBUG_HOST', _str_setting),
+)
+
 WIFI_SETTINGS = (
     ('WIFI_ESSID', _str_setting),
     ('WIFI_PASSWORD', _str_setting),
@@ -42,7 +46,9 @@ BACOTTO_SETTINGS = (
 def main():
     # in the future env could be a config file
     env = os.environ
+    env.setdefault('DEBUG_HOST', '')
 
+    _dump_settings_group(env, 'Debug', DEBUG_SETTINGS)
     _dump_settings_group(env, 'Wifi', WIFI_SETTINGS)
     _dump_settings_group(env, 'Bacotto', BACOTTO_SETTINGS)
 
