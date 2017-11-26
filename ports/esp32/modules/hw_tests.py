@@ -1,11 +1,14 @@
 import machine
-from hw_cfg import *
 import time
 
+import sh1106
+
+from hw_cfg import *
+
+
 def display_test():
-    import sh1106
-    spi = machine.SPI(baudrate = 100000, sck=sck_pin, mosi=mosi_pin,
-                      miso=miso_pin)
+    spi = machine.SPI(baudrate = 100000, sck=sck_pin,
+                      mosi=mosi_pin, miso=miso_pin)
     display = sh1106.SH1106_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
     display.sleep(False)
     display.fill(1)
