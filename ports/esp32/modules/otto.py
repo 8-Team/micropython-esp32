@@ -1,8 +1,12 @@
-import settings
 import network
 import otp
+import sh1106
+import socket
 import urequests
 import utime
+
+import settings
+from hw_cfg import *
 
 
 def wlan_connect():
@@ -44,6 +48,16 @@ def call_bacotto(otp_gen):
 
 
 def run():
+    if settings.DEBUG_HOST:
+        debug_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    spi = machine.SPI(baudrate=100000, sck=sck_pin,
+                      mosi=mosi_pin, miso=miso_pin)
+    display = sh1106.SH1106_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
+    display.sleep(False)
+
+    display.text('Hello Otto!', 20, 30)
+
     otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
     sntp_setup = False
 
@@ -57,10 +71,16 @@ def run():
                     utime.settime_sntp()
                     sntp_setup = True
 
+                if settings.DEBUG_HOST:
+                    print('debug: sending display buffer to', settings.DEBUG_HOST)
+                    debug_sock.sendto(display.buffer, (settings.DEBUG_HOST, 9999))
+                    utime.sleep_ms(1000)
+
                 print('current timestamp:', utime.time())
                 call_bacotto(otp_gen)
+
             except Exception as e:
-                print(e)
+                print('Error:', e)
                 utime.sleep_ms(1000)
 
             wlan_disconnect()
