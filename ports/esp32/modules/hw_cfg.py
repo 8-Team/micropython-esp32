@@ -25,9 +25,10 @@ buzzer_pin = machine.Pin(27, mode = machine.Pin.OUT)    # IO27
 press_int_pin = machine.Pin(13, mode = machine.Pin.OUT) # IO13
 acc_int_pin = machine.Pin(14, mode = machine.Pin.OUT)   # IO14
 
-# scl_pin = machine.Pin(2)
-# sda_pin = machine.Pin(4)
+ scl_pin = machine.Pin(2) # IO23
+ sda_pin = machine.Pin(4) # IO4
 
 ## ADC pins ##################################
+#For now we leave always on
 #batt_meas_en_pin = machine.Pin(39, mode = machine.Pin.OUT) #IO39 Active = 0
-#batt_volt_pin = machine.Pin(39) #IO39 Active = 0
+batt_volt_pin = machine.Pin(39) #IO39 Active = 0
