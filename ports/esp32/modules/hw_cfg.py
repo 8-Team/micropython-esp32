@@ -16,8 +16,8 @@ cs_pin = machine.Pin(18)   # IO18
 ## Buttons pins ##################################
 user_btn_pin = machine.Pin(12, machine.Pin.IN)  #IO12 Pressed = 1
 enc_a_pin = machine.Pin(26, machine.Pin.IN)     #IO26 Active = 0
-enc_b_pin = machine.Pin(25, machine.Pin.IN)     #IO25 Active = 0
-enc_btn_pin = machine.Pin(35, machine.Pin.IN)   #IO35 Active = 0
+enc_b_pin = machine.Pin(35, machine.Pin.IN)     #IO25 Active = 0
+enc_btn_pin = machine.Pin(25, machine.Pin.IN)   #IO35 Active = 0
 
 ## Devices pins ##################################
 viber_pin = machine.Pin(5, mode = machine.Pin.OUT)      # IO5
