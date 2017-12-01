@@ -92,12 +92,17 @@ class SH1106:
         self.buffer = bytearray(self.pages * self.width)
         self.framebuf = framebuf.FrameBuffer(self.buffer, self.width, self.height, framebuf.MVLSB)
         self.init_display()
+        self.flip()
 
     def init_display(self):
         self.reset()
         self.fill(0)
         self.poweron()
         self.show()
+
+    def flip(self):
+        self.write_cmd(const(0xA1))
+        self.write_cmd(const(0xC8))
 
     def poweroff(self):
         self.write_cmd(_SET_DISP | 0x00)
