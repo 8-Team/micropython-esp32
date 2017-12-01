@@ -39,3 +39,19 @@ def display():
     display.text("Fine", 2, 1)
     display.show()
     time.sleep(1)
+
+def viber():
+    for i in range(10):
+        viber_pin.value(1)
+        time.sleep(0.5)
+        viber_pin.value(0)
+        time.sleep(0.5)
+
+def buttons():
+    for i in range(60):
+        print("btn: %s" % user_btn_pin.value())
+        print("enA: %s" % enc_a_pin.value())
+        print("enB: %s" % enc_b_pin.value())
+        print("enS: %s" % enc_btn_pin.value())
+        time.sleep(0.3)
+
