@@ -40,6 +40,20 @@ def display():
     display.show()
     time.sleep(1)
 
+def viberBtn():
+    while True:
+        if user_btn_pin.value() == 1:
+            print("btn: %s" % user_btn_pin.value())
+            for i in range(2):
+                viber_pin.value(1)
+                time.sleep(0.5)
+                viber_pin.value(0)
+                time.sleep(0.5)
+
+        if enc_btn_pin.value() == 0:
+            print("enS: %s" % enc_btn_pin.value())
+            break
+
 def viber():
     for i in range(10):
         viber_pin.value(1)
