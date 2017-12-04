@@ -610,7 +610,7 @@ deploy: $(BUILD)/firmware.bin
 	flash
 
 docker-build:
-	docker run --rm -u $(shell id -u $(USER)) -v $(shell pwd):/home/micropython/micropython/ports/esp32 micropython-esp32
+	docker run --rm -u $(shell id -u $(USER)) -v $(shell pwd):/home/micropython/micropython/ports/esp32 asterix24/micropython-esp32
 
 erase:
 	$(ECHO) "Erasing flash"
