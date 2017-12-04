@@ -147,6 +147,9 @@ class SH1106:
     def text(self, string, x, y, col=1):
         self.framebuf.text(string, x, y, col)
 
+    def blit(self, fbuf, x, y):
+        self.framebuf.blit(fbuf, x, y)
+
     def reset(self, res):
         if res is not None:
             res(1)
