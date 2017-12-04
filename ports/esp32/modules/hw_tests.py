@@ -40,6 +40,15 @@ def display():
     display.show()
     time.sleep(1)
 
+def icons(icons, x=0, y=0):
+    spi = machine.SPI(baudrate = 100000, sck=sck_pin,
+                      mosi=mosi_pin, miso=miso_pin)
+    display = sh1106.SH1106_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
+    display.sleep(False)
+    display.blit(icons, x, y)
+    display.show()
+
+
 def viberBtn():
     while True:
         if user_btn_pin.value() == 1:
