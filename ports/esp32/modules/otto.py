@@ -61,13 +61,6 @@ def welcome(display):
     display.fill(0)
     display.show()
 
-def show_clock(display):
-    display.fill(0)
-    year, month, day, hour, minute, second, _, _ = utime.localtime()
-    display.text("%s/%s/%s" % (day, month, year), 20, 10)
-    display.text("%s:%s:%s" % (hour, minute, second), 20, 30)
-    display.show()
-    utime.sleep_ms(5000)
 
 def viber():
     for i in range(3):
@@ -78,18 +71,27 @@ def viber():
 
 display = None
 flag = False
+bounce = 0
 def buttonPressed(b):
     print("Pressed %s" % b)
+    global bounce
     global flag
+
     if flag:
         display.blit(icons.logo, 0, 0)
         display.show()
-        utime.sleep_ms(1000)
-        show_clock(display)
-        flag = not flag
+        utime.sleep_ms(300)
+
+        display.fill(0)
+        year, month, day, hour, minute, second, _, _ = utime.localtime()
+        display.text("%s/%s/%s" % (day, month, year), 20, 10)
+        display.text("%s:%s:%s" % (hour, minute, second), 20, 30)
+        display.show()
     else:
         display.fill(0)
         display.show()
+
+    flag = not flag
 
 def run():
     if settings.DEBUG_HOST:
