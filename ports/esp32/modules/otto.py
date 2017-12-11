@@ -6,6 +6,9 @@ import urequests
 import utime
 
 import settings
+import icons
+import buttons
+
 from hw_cfg import *
 
 
@@ -47,23 +50,67 @@ def call_bacotto(otp_gen):
     print('Wow! Bacotto replied:', resp.status_code, resp.text)
 
 
+def welcome(display):
+    display.blit(icons.logo, 0, 0)
+    display.show()
+    utime.sleep_ms(2000)
+    display.fill(0)
+    display.text('Hello Otto!', 20, 30)
+    display.show()
+    utime.sleep_ms(1000)
+    display.fill(0)
+    display.show()
+
+def show_clock(display):
+    display.fill(0)
+    year, month, day, hour, minute, second, _, _ = utime.localtime()
+    display.text("%s/%s/%s" % (day, month, year), 20, 10)
+    display.text("%s:%s:%s" % (hour, minute, second), 20, 30)
+    display.show()
+    utime.sleep_ms(5000)
+
+def viber():
+    for i in range(3):
+        viber_pin.value(1)
+        utime.sleep(100)
+        viber_pin.value(0)
+        utime.sleep(100)
+
+display = None
+flag = False
+def buttonPressed(b):
+    print("Pressed %s" % b)
+    global flag
+    if flag:
+        display.blit(icons.logo, 0, 0)
+        display.show()
+        utime.sleep_ms(1000)
+        show_clock(display)
+        flag = not flag
+    else:
+        display.fill(0)
+        display.show()
+
 def run():
     if settings.DEBUG_HOST:
         debug_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     spi = machine.SPI(baudrate=100000, sck=sck_pin,
                       mosi=mosi_pin, miso=miso_pin)
+
+    global display
     display = sh1106.SH1106_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
     display.sleep(False)
 
-    display.text('Hello Otto!', 20, 30)
+    welcome(display)
 
     otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
     sntp_setup = False
 
+    user_btn_pin.irq(buttonPressed, trigger=machine.Pin.IRQ_RISING)
+
     while True:
         is_connected = wlan_connect()
-
         if is_connected:
             try:
                 if not sntp_setup:
@@ -84,3 +131,4 @@ def run():
                 utime.sleep_ms(1000)
 
             wlan_disconnect()
+
