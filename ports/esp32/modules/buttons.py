@@ -43,8 +43,8 @@ class Buttons:
             hour if len(str(hour)) > 1 else "0" + str(hour)
             minute if len(str(minute)) > 1 else "0" + str(minute)
             second if len(str(second)) > 1 else "0" + str(second)
-            self.display.text("%s/%s/%s" % (day, month, year), 20, 20)
-            self.display.text("%s:%s:%s" % (hour, minute, second), 20, 30)
+            self.display.text("%s/%s/%s" % (day, month, year), 30, 20)
+            self.display.text("%s:%s:%s" % (hour, minute, second), 30, 30)
         self.display.show()
         self.flag = not self.flag
         self.pulse = False
