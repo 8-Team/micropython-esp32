@@ -41,6 +41,8 @@ def wlan_disconnect():
 
 
 def call_bacotto(otp_gen):
+    # upy uses 2000 based epoch, but the backend does not
+    now = utime.time() + utime.UPY_EPOCH_UNIX_EPOCH_DIFF
     totp_tok = otp_gen.totp(utime.time(), interval=30)
 
     resp = urequests.get(settings.BACOTTO_URL + '/ping', params={

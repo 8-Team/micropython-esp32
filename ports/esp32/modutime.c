@@ -38,6 +38,11 @@
 
 #include "apps/sntp/sntp.h"
 
+
+// unix epoch is 1970-01-01, but upy uses 2000-01-01
+#define UPY_EPOCH_UNIX_EPOCH_DIFF 946684800
+
+
 STATIC mp_obj_t time_localtime(size_t n_args, const mp_obj_t *args) {
     timeutils_struct_time_t tm;
     mp_int_t seconds;
@@ -88,23 +93,6 @@ MP_DEFINE_CONST_FUN_OBJ_0(time_time_obj, time_time);
 
 
 // not a standard python function
-STATIC mp_obj_t time_settime(size_t n_args, const mp_obj_t *args) {
-    struct timeval tv;
-    tv.tv_sec = mp_obj_int_get_checked(args[0]);
-    tv.tv_usec = 0;
-
-    if (n_args > 1) {
-        tv.tv_usec = mp_obj_int_get_checked(args[1]);
-    }
-
-    settimeofday(&tv, NULL);
-
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(time_settime_obj, 1, 2, time_settime);
-
-
-// not a standard python function
 STATIC mp_obj_t time_settime_sntp() {
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
@@ -121,6 +109,12 @@ STATIC mp_obj_t time_settime_sntp() {
         localtime_r(&now, &timeinfo);
     }
 
+    // sntp starts seconds from 1970, upy from 2000
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    tv.tv_sec -= UPY_EPOCH_UNIX_EPOCH_DIFF;
+    settimeofday(&tv, NULL);
+
     sntp_stop();
 
     return mp_const_none;
@@ -131,9 +125,11 @@ MP_DEFINE_CONST_FUN_OBJ_0(time_settime_sntp_obj, time_settime_sntp);
 STATIC const mp_rom_map_elem_t time_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_utime) },
 
+    { MP_OBJ_NEW_QSTR(MP_QSTR_UPY_EPOCH_UNIX_EPOCH_DIFF),
+        MP_OBJ_NEW_SMALL_INT(UPY_EPOCH_UNIX_EPOCH_DIFF) },
+
     { MP_ROM_QSTR(MP_QSTR_localtime), MP_ROM_PTR(&time_localtime_obj) },
     { MP_ROM_QSTR(MP_QSTR_mktime), MP_ROM_PTR(&time_mktime_obj) },
-    { MP_ROM_QSTR(MP_QSTR_settime), MP_ROM_PTR(&time_settime_obj) },
     { MP_ROM_QSTR(MP_QSTR_settime_sntp), MP_ROM_PTR(&time_settime_sntp_obj) },
     { MP_ROM_QSTR(MP_QSTR_time), MP_ROM_PTR(&time_time_obj) },
     { MP_ROM_QSTR(MP_QSTR_sleep), MP_ROM_PTR(&mp_utime_sleep_obj) },
