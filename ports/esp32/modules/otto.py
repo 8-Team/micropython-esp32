@@ -1,95 +1,111 @@
-import network
 import otp
 import sh1106
 import socket
 import urequests
 import utime
 
-import settings
-import icons
 import buttons
+import icons
+import settings
+import wlan_manager
 
 from hw_cfg import *
 
 
-def wlan_connect():
-    sta_if = network.WLAN(network.STA_IF)
+class Otto:
+    def __init__(self):
+        self._init_resources()
+        self._init_state()
 
-    if not sta_if.isconnected():
-        print('connecting to network...')
+    def _init_resources(self):
+        self.wlan = wlan_manager.WlanManager()
 
-        sta_if.active(True)
-        sta_if.connect(settings.WIFI_ESSID, settings.WIFI_PASSWORD)
+        self.spi = machine.SPI(baudrate=100000, sck=sck_pin,
+                               mosi=mosi_pin, miso=miso_pin)
 
-        utime.sleep_ms(settings.WIFI_TIMEOUT)
+        self.display = sh1106.SH1106_SPI(128, 64, self.spi, dc_pin, res_pin, cs_pin)
+        self.display.sleep(False)
 
-    print('network config:', sta_if.ifconfig())
-    return sta_if.isconnected()
+        self.otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
 
+        buttons.Buttons(self.display)
 
-def wlan_disconnect():
-    sta_if = network.WLAN(network.STA_IF)
+        self.debug_sock = None
+        if settings.DEBUG_ENABLED and settings.DEBUG_HOST:
+            self.debug_sock = socket.socket(socket.AF_INET,
+                                            socket.SOCK_DGRAM)
 
-    if sta_if.isconnected():
-        print('disconnecting from network...')
+    def _init_state(self):
+        self.need_wifi_count = 0
+        self.sntp_setup = False
+        self.bacotto_ping_counter = 0
 
-        sta_if.active(False)
+    def run(self):
+        while True:
+            old_need_wifi_count = self.need_wifi_count
+            if self.need_wifi_count > 0:
+                self.wlan.connect()
 
-        utime.sleep_ms(settings.WIFI_TIMEOUT)
+            if self.wlan.is_connected():
+                self.display.blit(icons.wifi, 0, 0)
 
-    return sta_if.isconnected()
+            self.setup_sntp()
 
-
-def call_bacotto(otp_gen):
-    # upy uses 2000 based epoch, but the backend does not
-    now = utime.time() + utime.UPY_EPOCH_UNIX_EPOCH_DIFF
-    totp_tok = otp_gen.totp(utime.time(), interval=30)
-
-    resp = urequests.get(settings.BACOTTO_URL + '/ping', params={
-        'otp': totp_tok,
-        'serial': settings.BACOTTO_SERIAL,
-    })
-    print('Wow! Bacotto replied:', resp.status_code, resp.text)
-
-def run():
-    if settings.DEBUG_HOST:
-        debug_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    spi = machine.SPI(baudrate=100000, sck=sck_pin,
-                      mosi=mosi_pin, miso=miso_pin)
-
-    display = sh1106.SH1106_SPI(128, 64, spi, dc_pin, res_pin, cs_pin)
-    display.sleep(False)
-
-    otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
-    sntp_setup = False
-
-    buttons.Buttons(display)
-
-    while True:
-        is_connected = wlan_connect()
-        if is_connected:
-            display.blit(icons.wifi, 0, 0)
-            display.show()
             try:
-                if not sntp_setup:
-                    print('sntp setup...')
-                    utime.settime_sntp()
-                    sntp_setup = True
+                self.debug()
+            except Exception as exc:
+                print('Error debug:', exc)
 
-                if settings.DEBUG_HOST:
-                    print('debug: sending display buffer to', settings.DEBUG_HOST)
-                    debug_sock.sendto(display.buffer, (settings.DEBUG_HOST, 9999))
-                    utime.sleep_ms(1000)
-
-                print('current timestamp:', utime.time())
-                call_bacotto(otp_gen)
-
-            except Exception as e:
-                print('Error:', e)
+            try:
+                self.ping_bacotto()
+            except Exception as exc:
+                print('Error ping_bacotto:', exc)
                 utime.sleep_ms(1000)
 
-            wlan_disconnect()
-        display.blit(icons.clean(32,32,0,0), 0, 0)
-        display.show()
+            if old_need_wifi_count > 0 and self.need_wifi_count == 0:
+                self.wlan.disconnect()
+                utime.sleep_ms(100)
 
+            self.display.blit(icons.clean(32, 32, 0, 0), 0, 0)
+            self.display.show()
+            utime.sleep_ms(100)
+
+    def setup_sntp(self):
+        if not self.sntp_setup:
+            if self.wlan.is_connected():
+                print('sntp setup...')
+                utime.settime_sntp()
+                self.sntp_setup = True
+                self.need_wifi_count -= 1
+            else:
+                self.need_wifi_count += 1
+
+    def debug(self):
+        if self.debug_sock:
+            print('debug: sending display buffer to', settings.DEBUG_HOST)
+            self.debug_sock.sendto(display.buffer, (settings.DEBUG_HOST, 9999))
+            utime.sleep_ms(1000)
+
+    def ping_bacotto(self):
+        if self.bacotto_ping_counter == 9:
+            if self.wlan.is_connected():
+                self.bacotto_ping_counter = 0
+                self.need_wifi_count -= 1
+                self.call_bacotto()
+            else:
+                self.need_wifi_count += 1
+        else:
+            self.bacotto_ping_counter += 1
+
+    def call_bacotto(self):
+        # upy uses 2000 based epoch, but the backend does not
+        now = utime.time() + utime.UPY_EPOCH_UNIX_EPOCH_DIFF
+
+        print('current timestamp:', now)
+        totp_tok = self.otp_gen.totp(utime.time(), interval=30)
+
+        resp = urequests.get(settings.BACOTTO_URL + '/ping', params={
+            'otp': totp_tok,
+            'serial': settings.BACOTTO_SERIAL,
+        })
+        print('Wow! Bacotto replied:', resp.status_code, resp.text)

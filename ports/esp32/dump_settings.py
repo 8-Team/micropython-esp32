@@ -17,12 +17,16 @@ def _bytes_setting(val):
 def _int_setting(val):
     return str(int(val))
 
+def _bool_setting(val):
+    return val.lower() == 'true'
+
 
 # -----------------------------------------------------------
 # Settings
 # -----------------------------------------------------------
 
 DEBUG_SETTINGS = (
+    ('DEBUG_ENABLED', _bool_setting),
     ('DEBUG_HOST', _str_setting),
 )
 
@@ -47,6 +51,7 @@ def main():
     # in the future env could be a config file
     env = os.environ
     env.setdefault('DEBUG_HOST', '')
+    env.setdefault('DEBUG_ENABLED', 'false')
 
     _dump_settings_group(env, 'Debug', DEBUG_SETTINGS)
     _dump_settings_group(env, 'Wifi', WIFI_SETTINGS)

@@ -38,14 +38,20 @@ class Buttons:
             utime.sleep_ms(1000)
             self.display.fill(0)
             year, month, day, hour, minute, second, _, _ = utime.localtime()
-            month if len(str(month)) > 1 else "0" + str(month)
-            day if len(str(day)) > 1 else "0" + str(day)
-            hour if len(str(hour)) > 1 else "0" + str(hour)
-            minute if len(str(minute)) > 1 else "0" + str(minute)
-            second if len(str(second)) > 1 else "0" + str(second)
-            self.display.text("%s/%s/%s" % (day, month, year), 30, 20)
-            self.display.text("%s:%s:%s" % (hour, minute, second), 30, 30)
+            month = _pretty_digit(month)
+            day = _pretty_digit(day)
+            hour = _pretty_digit(hour)
+            minute = _pretty_digit(minute)
+            second = _pretty_digit(second)
+            self.display.text("%s/%s/%s" % (day, month, year), 35, 20)
+            self.display.text("%s:%s:%s" % (hour, minute, second), 35, 30)
         self.display.show()
         self.flag = not self.flag
         self.pulse = False
 
+
+def _pretty_digit(d):
+    if d <= 9:
+        return '0' + str(d)
+
+    return str(d)
