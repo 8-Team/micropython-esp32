@@ -28,7 +28,7 @@ class Otto:
 
         self.otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
 
-        buttons.Buttons(self.display)
+        # buttons.Buttons(self.display)
 
         self.debug_sock = None
         if settings.DEBUG_ENABLED and settings.DEBUG_HOST:
@@ -36,18 +36,40 @@ class Otto:
                                             socket.SOCK_DGRAM)
 
     def _init_state(self):
+        self.start_time = None
         self.need_wifi_count = 0
         self.sntp_setup = False
         self.bacotto_ping_counter = 0
 
+    def welcome(self):
+        self.display.blit(icons.logo, 0, 0)
+        self.display.show()
+        utime.sleep_ms(2000)
+        self.display.fill(0)
+
+    def display_project(self):
+        if not self.start_time:
+            self.display.text('Fetching time...', 10, 40)
+            return
+
+        delta = utime.time() - self.start_time
+        hours = int(delta / 3600)
+        mins = int((delta % 3600) / 60)
+        project = 'Otto'
+
+        self.display.text(
+            "%s %s:%s" % (project, _pretty_digit(hours), _pretty_digit(mins)),
+            10, 40)
+
     def run(self):
+        self.welcome()
+
         while True:
+            self.display.fill(0)
+
             old_need_wifi_count = self.need_wifi_count
             if self.need_wifi_count > 0:
                 self.wlan.connect()
-
-            if self.wlan.is_connected():
-                self.display.blit(icons.wifi, 0, 0)
 
             self.setup_sntp()
 
@@ -66,7 +88,12 @@ class Otto:
                 self.wlan.disconnect()
                 utime.sleep_ms(100)
 
-            self.display.blit(icons.clean(32, 32, 0, 0), 0, 0)
+            self.display.blit(icons.batt2, 55, 7)
+            if self.wlan.is_connected():
+                self.display.blit(icons.wifi, 90, 0)
+
+            self.display_project()
+
             self.display.show()
             utime.sleep_ms(100)
 
@@ -77,6 +104,7 @@ class Otto:
                 utime.settime_sntp()
                 self.sntp_setup = True
                 self.need_wifi_count -= 1
+                self.start_time = utime.time()
             else:
                 self.need_wifi_count += 1
 
@@ -98,6 +126,9 @@ class Otto:
             self.bacotto_ping_counter += 1
 
     def call_bacotto(self):
+        if not self.wlan.is_connected():
+            return
+
         # upy uses 2000 based epoch, but the backend does not
         now = utime.time() + utime.UPY_EPOCH_UNIX_EPOCH_DIFF
 
@@ -109,3 +140,10 @@ class Otto:
             'serial': settings.BACOTTO_SERIAL,
         })
         print('Wow! Bacotto replied:', resp.status_code, resp.text)
+
+
+def _pretty_digit(d):
+    if d <= 9:
+        return '0' + str(d)
+
+    return str(d)
