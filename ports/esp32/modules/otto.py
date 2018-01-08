@@ -47,6 +47,11 @@ class Otto:
         utime.sleep_ms(2000)
         self.display.fill(0)
 
+    def display_navbar(self):
+        self.display.blit(icons.battery_half, 75, 0)
+        if self.wlan.is_connected():
+            self.display.blit(icons.wifi, 100, 0)
+
     def display_project(self):
         if not self.start_time:
             self.display.text('Fetching time...', 10, 40)
@@ -59,7 +64,7 @@ class Otto:
 
         self.display.text(
             "%s %s:%s" % (project, _pretty_digit(hours), _pretty_digit(mins)),
-            10, 40)
+            10, 30)
 
     def run(self):
         self.welcome()
@@ -88,10 +93,7 @@ class Otto:
                 self.wlan.disconnect()
                 utime.sleep_ms(100)
 
-            self.display.blit(icons.batt2, 55, 7)
-            if self.wlan.is_connected():
-                self.display.blit(icons.wifi, 90, 0)
-
+            self.display_navbar()
             self.display_project()
 
             self.display.show()
