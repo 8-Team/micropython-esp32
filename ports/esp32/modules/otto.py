@@ -4,7 +4,7 @@ import socket
 import urequests
 import utime
 
-import buttons
+# import buttons
 import icons
 import settings
 import wlan_manager
@@ -29,6 +29,7 @@ class Otto:
         self.otp_gen = otp.OTP(settings.BACOTTO_OTP_SECRET)
 
         # buttons.Buttons(self.display)
+        self.button = user_btn_pin
 
         self.debug_sock = None
         if settings.DEBUG_ENABLED and settings.DEBUG_HOST:
@@ -41,6 +42,11 @@ class Otto:
         self.sntp_setup = False
         self.bacotto_ping_counter = 0
 
+        # stub
+        self.current_project = None
+        self.project_list = ['Otto', 'Fuffa', 'Foobar', 'Gah']
+        self.project_idx = 0
+
     def welcome(self):
         self.display.blit(icons.logo, 0, 0)
         self.display.show()
@@ -52,25 +58,42 @@ class Otto:
         if self.wlan.is_connected():
             self.display.blit(icons.wifi, 100, 0)
 
-    def display_project(self):
-        if not self.start_time:
-            self.display.text('Fetching time...', 10, 40)
-            return
+    def display_initializing(self):
+        self.display.text('Fetching time...', 10, 40)
 
+    def display_project_list(self):
+        # TODO: scrolling
+        for i, p in enumerate(self.project_list[:3], start=1):
+            self.display.text(p, 5, 15 + i * 10)
+
+    def display_project_time(self):
         delta = utime.time() - self.start_time
         hours = int(delta / 3600)
         mins = int((delta % 3600) / 60)
-        project = 'Otto'
+        project = self.current_project
 
         self.display.text(
             "%s %s:%s" % (project, _pretty_digit(hours), _pretty_digit(mins)),
             10, 30)
+
+    def display_body(self):
+        if not self.start_time:
+            self.display_initializing()
+            return
+
+        if self.current_project is not None:
+            self.display_project_time()
+        else:
+            self.display_project_list()
 
     def run(self):
         self.welcome()
 
         while True:
             self.display.fill(0)
+
+            if self.current_project is None and self.button.value():
+                self.current_project = self.project_list[self.project_idx]
 
             old_need_wifi_count = self.need_wifi_count
             if self.need_wifi_count > 0:
@@ -83,18 +106,18 @@ class Otto:
             except Exception as exc:
                 print('Error debug:', exc)
 
-            try:
-                self.ping_bacotto()
-            except Exception as exc:
-                print('Error ping_bacotto:', exc)
-                utime.sleep_ms(1000)
+            # try:
+            #     self.ping_bacotto()
+            # except Exception as exc:
+            #     print('Error ping_bacotto:', exc)
+            #     utime.sleep_ms(1000)
 
             if old_need_wifi_count > 0 and self.need_wifi_count == 0:
                 self.wlan.disconnect()
-                utime.sleep_ms(100)
+                utime.sleep_ms(500)
 
             self.display_navbar()
-            self.display_project()
+            self.display_body()
 
             self.display.show()
             utime.sleep_ms(100)
