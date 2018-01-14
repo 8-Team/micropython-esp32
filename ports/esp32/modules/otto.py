@@ -37,7 +37,7 @@ class Otto:
                                             socket.SOCK_DGRAM)
 
     def _init_state(self):
-        self.start_time = None
+        self.project_start_time = None
         self.need_wifi_count = 0
         self.sntp_setup = False
         self.bacotto_ping_counter = 0
@@ -46,6 +46,9 @@ class Otto:
         self.current_project = None
         self.project_list = ['Otto', 'Fuffa', 'Foobar', 'Gah']
         self.project_idx = 0
+
+        # hours to send to bacotto
+        self.projects_hours = []
 
     def welcome(self):
         self.display.blit(icons.logo, 0, 0)
@@ -67,7 +70,7 @@ class Otto:
             self.display.text(p, 5, 15 + i * 10)
 
     def display_project_time(self):
-        delta = utime.time() - self.start_time
+        delta = utime.time() - self.project_start_time
         hours = int(delta / 3600)
         mins = int((delta % 3600) / 60)
         project = self.current_project
@@ -77,7 +80,7 @@ class Otto:
             10, 30)
 
     def display_body(self):
-        if not self.start_time:
+        if not self.sntp_setup:
             self.display_initializing()
             return
 
@@ -93,7 +96,12 @@ class Otto:
             self.display.fill(0)
 
             if self.current_project is None and self.button.value():
+                self.project_start_time = utime.time()
                 self.current_project = self.project_list[self.project_idx]
+            elif self.current_project is not None and self.button.value():
+                self.register_current_project()
+                self.current_project = None
+                self.project_start_time = None
 
             old_need_wifi_count = self.need_wifi_count
             if self.need_wifi_count > 0:
@@ -105,6 +113,8 @@ class Otto:
                 self.debug()
             except Exception as exc:
                 print('Error debug:', exc)
+
+            self.send_hours()
 
             # try:
             #     self.ping_bacotto()
@@ -138,6 +148,21 @@ class Otto:
             print('debug: sending display buffer to', settings.DEBUG_HOST)
             self.debug_sock.sendto(display.buffer, (settings.DEBUG_HOST, 9999))
             utime.sleep_ms(1000)
+
+    def register_current_project(self):
+        project_delta = utime.time() - self.project_start_time
+        self.projects_hours.append((self.current_project, project_delta))
+
+    def send_hours(self):
+        if not self.projects_hours:
+            return
+
+        if self.wlan.is_connected():
+            print('sending hours to bacotto')
+            self.projects_hours = []
+            self.need_wifi_count -= 1
+        else:
+            self.need_wifi_count += 1
 
     def ping_bacotto(self):
         if self.bacotto_ping_counter == 9:
