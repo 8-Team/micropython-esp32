@@ -44,7 +44,7 @@ class Otto:
 
         # stub
         self.current_project = None
-        self.project_list = ['Otto', 'Fuffa', 'Foobar', 'Gah']
+        self.project_list = []
         self.project_idx = 0
 
         # hours to send to bacotto
@@ -66,8 +66,9 @@ class Otto:
 
     def display_project_list(self):
         # TODO: scrolling
-        for i, p in enumerate(self.project_list[:3], start=1):
-            self.display.text(p, 5, 15 + i * 10)
+        for i, prj in enumerate(self.project_list[:3], start=1):
+            name = prj['ShortName']
+            self.display.text(name, 5, 15 + i * 10)
 
     def display_project_time(self):
         delta = utime.time() - self.project_start_time
@@ -76,7 +77,7 @@ class Otto:
         project = self.current_project
 
         self.display.text(
-            "%s %s:%s" % (project, _pretty_digit(hours), _pretty_digit(mins)),
+            "%s %s:%s" % (project['ShortName'], _pretty_digit(hours), _pretty_digit(mins)),
             10, 30)
 
     def display_body(self):
@@ -108,6 +109,7 @@ class Otto:
                 self.wlan.connect()
 
             self.setup_sntp()
+            self.fetch_projects()
 
             try:
                 self.debug()
@@ -143,6 +145,18 @@ class Otto:
             else:
                 self.need_wifi_count += 1
 
+    def fetch_projects(self):
+        # TODO: invalidate the list of projects
+        if self.project_list:
+            return
+
+        if self.wlan.is_connected():
+            print('fetching projects...')
+            self.project_list = self.call_bacotto('GET', '/projects', {}).json()
+            self.need_wifi_count -= 1
+        else:
+            self.need_wifi_count += 1
+
     def debug(self):
         if self.debug_sock:
             print('debug: sending display buffer to', settings.DEBUG_HOST)
@@ -159,6 +173,7 @@ class Otto:
 
         if self.wlan.is_connected():
             print('sending hours to bacotto')
+            # self.call_bacotto('POST', 'register', {})
             self.projects_hours = []
             self.need_wifi_count -= 1
         else:
@@ -169,13 +184,14 @@ class Otto:
             if self.wlan.is_connected():
                 self.bacotto_ping_counter = 0
                 self.need_wifi_count -= 1
+                self.call_bacotto('GET', '/ping', {})
                 self.call_bacotto()
             else:
                 self.need_wifi_count += 1
         else:
             self.bacotto_ping_counter += 1
 
-    def call_bacotto(self):
+    def call_bacotto(self, method, path, params):
         if not self.wlan.is_connected():
             return
 
@@ -185,11 +201,19 @@ class Otto:
         print('current timestamp:', now)
         totp_tok = self.otp_gen.totp(utime.time(), interval=30)
 
-        resp = urequests.get(settings.BACOTTO_URL + '/ping', params={
+        params.update({
             'otp': totp_tok,
             'serial': settings.BACOTTO_SERIAL,
         })
+
+        if method in ('POST', 'PUT'):
+            resp = urequests.request(method, settings.BACOTTO_URL + path, json=params)
+        else:
+            resp = urequests.request(method, settings.BACOTTO_URL + path, params=params)
+
         print('Wow! Bacotto replied:', resp.status_code, resp.text)
+
+        return resp
 
 
 def _pretty_digit(d):
