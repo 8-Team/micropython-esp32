@@ -76,9 +76,8 @@ class Otto:
         mins = int((delta % 3600) / 60)
         project = self.current_project
 
-        self.display.text(
-            "%s %s:%s" % (project['ShortName'], _pretty_digit(hours), _pretty_digit(mins)),
-            10, 30)
+        self.display.text(project['ShortName'], 10, 30)
+        self.display.text('%s:%s' % (_pretty_digit(hours), _pretty_digit(mins)), 50, 45)
 
     def display_body(self):
         if not self.sntp_setup:
@@ -165,7 +164,7 @@ class Otto:
 
     def register_current_project(self):
         project_delta = utime.time() - self.project_start_time
-        self.projects_hours.append((self.current_project, project_delta))
+        self.projects_hours.append((self.current_project, self.project_start_time, project_delta))
 
     def send_hours(self):
         if not self.projects_hours:
@@ -173,7 +172,16 @@ class Otto:
 
         if self.wlan.is_connected():
             print('sending hours to bacotto')
-            # self.call_bacotto('POST', 'register', {})
+            self.call_bacotto('POST', '/register', {
+                'entries': [
+                    {
+                        'project_id': p['ID'],
+                        'start_time_secs': start + utime.UPY_EPOCH_UNIX_EPOCH_DIFF,
+                        'duration_secs': delta,
+                    }
+                    for p, start, delta in self.projects_hours
+                ]
+            })
             self.projects_hours = []
             self.need_wifi_count -= 1
         else:
