@@ -4,7 +4,7 @@ import socket
 import urequests
 import utime
 
-# import buttons
+import encoder
 import icons
 import settings
 import wlan_manager
@@ -30,6 +30,7 @@ class Otto:
 
         # buttons.Buttons(self.display)
         self.button = user_btn_pin
+        self.encoder = encoder.Encoder(enc_a_pin, enc_b_pin)
 
         self.debug_sock = None
         if settings.DEBUG_ENABLED and settings.DEBUG_HOST:
@@ -65,10 +66,12 @@ class Otto:
         self.display.text('Fetching time...', 10, 40)
 
     def display_project_list(self):
-        # TODO: scrolling
-        for i, prj in enumerate(self.project_list[:3], start=1):
-            name = prj['ShortName']
-            self.display.text(name, 5, 15 + i * 10)
+        nprojects = min(len(self.project_list), 3)
+        for i in range(nprojects):
+            pi = (self.project_idx + i) % len(self.project_list)
+            prj = self.project_list[pi]
+
+            self.display.text(prj['ShortName'], 5, 15 + (i + 1) * 10)
 
     def display_project_time(self):
         delta = utime.time() - self.project_start_time
@@ -95,13 +98,22 @@ class Otto:
         while True:
             self.display.fill(0)
 
-            if self.current_project is None and self.button.value():
-                self.project_start_time = utime.time()
-                self.current_project = self.project_list[self.project_idx]
+            enc_value = self.encoder.get_value()
+
+            if self.current_project is None:
+                if self.button.value():
+                    self.project_start_time = utime.time()
+                    self.current_project = self.project_list[self.project_idx]
+                else:
+                    if enc_value:
+                        self.project_idx = (
+                            self.project_idx + enc_value + len(self.project_list)
+                        ) % len(self.project_list)
             elif self.current_project is not None and self.button.value():
                 self.register_current_project()
                 self.current_project = None
                 self.project_start_time = None
+                self.project_idx = 0
 
             old_need_wifi_count = self.need_wifi_count
             if self.need_wifi_count > 0:
@@ -126,6 +138,9 @@ class Otto:
             if old_need_wifi_count > 0 and self.need_wifi_count == 0:
                 self.wlan.disconnect()
                 utime.sleep_ms(500)
+
+            if enc_value is not None:
+                self.encoder.reset()
 
             self.display_navbar()
             self.display_body()
