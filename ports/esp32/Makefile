@@ -622,10 +622,15 @@ flash:
 idf-version:
 	$(ECHO) "ESP IDF supported hash: $(ESPIDF_SUPHASH)"
 
+otto-deploy: otto-dev otto-cp-main flash
+
 otto-dev: otto-dump-settings docker-build
 
 otto-dump-settings:
 	$(Q)$(PYTHON) dump_settings.py > modules/settings.py
+
+otto-cp-main:
+	ampy --port $(PORT) put modules/main.py /main.py
 
 ################################################################################
 # Declarations to build the application
